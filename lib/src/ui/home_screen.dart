@@ -7,6 +7,7 @@ import '../model/rush_mode.dart';
 import '../theme/app_theme.dart';
 import 'rush_mode_l10n.dart';
 import 'rush_screen.dart';
+import 'leaderboard_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -34,9 +35,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _play(RushMode mode) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => RushScreen(mode: mode)),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => RushScreen(mode: mode)));
     _loadScores();
   }
 
@@ -57,8 +58,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Text(
                   l10n.homeSubtitle,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(color: Colors.white70),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.emoji_events_rounded),
+                  label: Text(l10n.leaderboardTitle),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const LeaderboardScreen(),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 32),
                 for (final mode in RushMode.values) ...[
@@ -73,8 +85,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Text(
                   l10n.homeAttribution,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: Colors.white38),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white38,
+                  ),
                 ),
               ],
             ),
@@ -108,19 +121,16 @@ class _Logo extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(28),
-            child: Image.asset(
-              'assets/img/logo.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/img/logo.png', fit: BoxFit.cover),
           ),
         ),
         const SizedBox(height: 20),
         Text(
           l10n.appTitle,
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.5,
-              ),
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.5,
+          ),
         ),
       ],
     );
@@ -166,14 +176,16 @@ class _ModeCard extends StatelessWidget {
                   children: [
                     Text(
                       mode.label(l10n),
-                      style: theme.textTheme.titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       mode.description(l10n),
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: Colors.white60),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white60,
+                      ),
                     ),
                   ],
                 ),
@@ -190,8 +202,9 @@ class _ModeCard extends StatelessWidget {
                   ),
                   Text(
                     l10n.record,
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: Colors.white38),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: Colors.white38,
+                    ),
                   ),
                 ],
               ),

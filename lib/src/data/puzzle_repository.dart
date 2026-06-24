@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,12 +32,42 @@ class PuzzleRepository {
   Future<List<Puzzle>> loadLocalPool() async {
     if (_localCache != null) return _localCache!;
     final raw = await rootBundle.loadString(_assetPath);
-    final list = (jsonDecode(raw) as List)
-        .map((e) => Puzzle.fromJson(e as Map<String, dynamic>))
-        .toList()
-      ..sort((a, b) => a.rating.compareTo(b.rating));
+    final list =
+        (jsonDecode(raw) as List)
+            .map((e) => Puzzle.fromJson(e as Map<String, dynamic>))
+            .toList()
+          ..sort((a, b) => a.rating.compareTo(b.rating));
     _localCache = list;
     return list;
+  }
+
+  /// Mezcla cada banda de 200 Elo sin romper la progresión. Los puzzles
+  /// recientes quedan al final de su banda y solo reaparecen al agotarla.
+  List<Puzzle> buildSessionPool(
+    List<Puzzle> puzzles,
+    Set<String> recentIds, {
+    Random? random,
+  }) {
+    final rng = random ?? Random();
+    final bands = <int, List<Puzzle>>{};
+    for (final puzzle in puzzles) {
+      (bands[puzzle.rating ~/ 200] ??= []).add(puzzle);
+    }
+
+    final result = <Puzzle>[];
+    for (final band in bands.keys.toList()..sort()) {
+      final fresh = <Puzzle>[];
+      final recent = <Puzzle>[];
+      for (final puzzle in bands[band]!) {
+        (recentIds.contains(puzzle.id) ? recent : fresh).add(puzzle);
+      }
+      fresh.shuffle(rng);
+      recent.shuffle(rng);
+      result
+        ..addAll(fresh)
+        ..addAll(recent);
+    }
+    return result;
   }
 
   /// Intenta traer [count] puzzles nuevos desde lichess. Devuelve lista vacía
@@ -47,12 +78,15 @@ class PuzzleRepository {
     for (var i = 0; i < count; i++) {
       try {
         final res = await _client
-            .get(Uri.parse(_nextEndpoint),
-                headers: const {'Accept': 'application/json'})
+            .get(
+              Uri.parse(_nextEndpoint),
+              headers: const {'Accept': 'application/json'},
+            )
             .timeout(const Duration(seconds: 8));
         if (res.statusCode != 200) break;
         final puzzle = _fromLichessJson(
-            jsonDecode(res.body) as Map<String, dynamic>);
+          jsonDecode(res.body) as Map<String, dynamic>,
+        );
         if (puzzle != null && seen.add(puzzle.id)) {
           result.add(puzzle);
         }
@@ -75,9 +109,9 @@ class PuzzleRepository {
 
       // Reproducir el PGN para reconstruir la posición.
       dc.Position pos = dc.Chess.initial;
-      for (final node in dc.PgnGame.parsePgn(game['pgn'] as String)
-          .moves
-          .mainline()) {
+      for (final node in dc.PgnGame.parsePgn(
+        game['pgn'] as String,
+      ).moves.mainline()) {
         final move = pos.parseSan(node.san);
         if (move == null) return null;
         pos = pos.play(move);

@@ -9,7 +9,7 @@ enum RushMode {
         RushMode.fiveMinutes => const Duration(minutes: 5),
       };
 
-  int? get maxStrikes => this == RushMode.survival ? 3 : null;
+  int? get maxStrikes => 3;
 
   bool get isTimed => timeLimit != null;
 

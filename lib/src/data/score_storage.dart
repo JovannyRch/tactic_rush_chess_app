@@ -7,7 +7,11 @@ import '../model/rush_mode.dart';
 final scoreStorageProvider = Provider<ScoreStorage>((ref) => ScoreStorage());
 
 class ScoreStorage {
+  static const _recentPuzzlesKey = 'recent_puzzle_ids';
+  static const _recentPuzzlesLimit = 200;
+
   SharedPreferences? _prefs;
+  Future<void> _pendingPuzzleWrites = Future.value();
 
   Future<SharedPreferences> get _instance async =>
       _prefs ??= await SharedPreferences.getInstance();
@@ -26,5 +30,24 @@ class ScoreStorage {
       return true;
     }
     return false;
+  }
+
+  Future<List<String>> recentPuzzleIds() async {
+    await _pendingPuzzleWrites;
+    final prefs = await _instance;
+    return prefs.getStringList(_recentPuzzlesKey) ?? const [];
+  }
+
+  Future<void> rememberPuzzle(String id) {
+    return _pendingPuzzleWrites = _pendingPuzzleWrites.then((_) async {
+      final prefs = await _instance;
+      final recent = prefs.getStringList(_recentPuzzlesKey) ?? <String>[];
+      recent.remove(id);
+      recent.add(id);
+      if (recent.length > _recentPuzzlesLimit) {
+        recent.removeRange(0, recent.length - _recentPuzzlesLimit);
+      }
+      await prefs.setStringList(_recentPuzzlesKey, recent);
+    });
   }
 }

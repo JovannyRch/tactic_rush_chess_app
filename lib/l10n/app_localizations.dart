@@ -161,13 +161,13 @@ abstract class AppLocalizations {
   /// No description provided for @modeThreeMinutesDescription.
   ///
   /// In en, this message translates to:
-  /// **'Max puzzles in 3:00'**
+  /// **'Max puzzles in 3:00 · 3 misses and out'**
   String get modeThreeMinutesDescription;
 
   /// No description provided for @modeFiveMinutesDescription.
   ///
   /// In en, this message translates to:
-  /// **'Max puzzles in 5:00'**
+  /// **'Max puzzles in 5:00 · 3 misses and out'**
   String get modeFiveMinutesDescription;
 
   /// No description provided for @quitTitle.
@@ -271,6 +271,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Home'**
   String get resultHome;
+
+  /// No description provided for @leaderboardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Online rankings'**
+  String get leaderboardTitle;
+
+  /// No description provided for @leaderboardView.
+  ///
+  /// In en, this message translates to:
+  /// **'View ranking'**
+  String get leaderboardView;
+
+  /// No description provided for @leaderboardDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get leaderboardDaily;
+
+  /// No description provided for @leaderboardWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get leaderboardWeekly;
+
+  /// No description provided for @leaderboardMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get leaderboardMonthly;
+
+  /// No description provided for @leaderboardEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No scores yet. Be the first!'**
+  String get leaderboardEmpty;
+
+  /// No description provided for @leaderboardOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'The online ranking is unavailable right now.'**
+  String get leaderboardOffline;
+
+  /// No description provided for @leaderboardRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get leaderboardRetry;
+
+  /// No description provided for @leaderboardEditName.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit nickname'**
+  String get leaderboardEditName;
+
+  /// No description provided for @leaderboardNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your nickname'**
+  String get leaderboardNameTitle;
+
+  /// No description provided for @leaderboardSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get leaderboardSave;
+
+  /// No description provided for @leaderboardNameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 2 to 20 characters.'**
+  String get leaderboardNameInvalid;
 }
 
 class _AppLocalizationsDelegate

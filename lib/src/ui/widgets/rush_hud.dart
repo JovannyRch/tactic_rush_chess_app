@@ -46,10 +46,13 @@ class RushHud extends StatelessWidget {
               _Clock(l10n: l10n, secondsLeft: state.secondsLeft),
           ],
         ),
-        if (state.history.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _History(results: state.history),
-        ],
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 22,
+          child: state.history.isNotEmpty
+              ? _History(results: state.history)
+              : const SizedBox.shrink(),
+        ),
       ],
     );
   }
@@ -63,42 +66,49 @@ class _History extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final visible = results.length > 12
-        ? results.sublist(results.length - 12)
-        : results;
-    return Row(
+    return LayoutBuilder(
       key: const ValueKey('rush-history'),
-      children: [
-        for (final (index, result) in visible.indexed)
-          Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: AnimatedContainer(
-              key: ValueKey('${results.length}-$index-${result.name}'),
-              duration: MediaQuery.disableAnimationsOf(context)
-                  ? Duration.zero
-                  : const Duration(milliseconds: 220),
-              curve: Curves.easeOutBack,
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: result == PuzzleResult.correct
-                    ? AppTheme.correct
-                    : AppTheme.wrong,
-                shape: BoxShape.circle,
+      builder: (context, constraints) {
+        final count = (constraints.maxWidth / 28).floor().clamp(1, 12);
+        final visible = results.length > count
+            ? results.sublist(results.length - count)
+            : results;
+        return Row(
+          children: [
+            for (final (index, result) in visible.indexed)
+              Padding(
+                padding: EdgeInsets.only(
+                  right: index == visible.length - 1 ? 0 : 6,
+                ),
+                child: AnimatedContainer(
+                  key: ValueKey('${results.length}-$index-${result.name}'),
+                  duration: MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : const Duration(milliseconds: 220),
+                  curve: Curves.easeOutBack,
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: result == PuzzleResult.correct
+                        ? AppTheme.correct
+                        : AppTheme.wrong,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    result == PuzzleResult.correct
+                        ? Icons.check_rounded
+                        : Icons.close_rounded,
+                    size: 15,
+                    color: Colors.white,
+                    semanticLabel: result == PuzzleResult.correct
+                        ? l10n.feedbackCorrect
+                        : l10n.feedbackWrong,
+                  ),
+                ),
               ),
-              child: Icon(
-                result == PuzzleResult.correct
-                    ? Icons.check_rounded
-                    : Icons.close_rounded,
-                size: 15,
-                color: Colors.white,
-                semanticLabel: result == PuzzleResult.correct
-                    ? l10n.feedbackCorrect
-                    : l10n.feedbackWrong,
-              ),
-            ),
-          ),
-      ],
+          ],
+        );
+      },
     );
   }
 }

@@ -15,8 +15,8 @@
   "modeThreeMinutesLabel": "3 minutes",
   "modeFiveMinutesLabel": "5 minutes",
   "modeSurvivalDescription": "Increasing difficulty · 3 misses and out",
-  "modeThreeMinutesDescription": "Max puzzles in 3:00",
-  "modeFiveMinutesDescription": "Max puzzles in 5:00",
+  "modeThreeMinutesDescription": "Max puzzles in 3:00 · 3 misses and out",
+  "modeFiveMinutesDescription": "Max puzzles in 5:00 · 3 misses and out",
 
   "quitTitle": "Quit the game?",
   "quitBody": "Current progress will be lost.",
@@ -44,4 +44,17 @@
   "resultPuzzlesSolved": "puzzles solved",
   "resultPlayAgain": "Play again",
   "resultHome": "Home"
+  ,
+  "leaderboardTitle": "Online rankings",
+  "leaderboardView": "View ranking",
+  "leaderboardDaily": "Daily",
+  "leaderboardWeekly": "Weekly",
+  "leaderboardMonthly": "Monthly",
+  "leaderboardEmpty": "No scores yet. Be the first!",
+  "leaderboardOffline": "The online ranking is unavailable right now.",
+  "leaderboardRetry": "Retry",
+  "leaderboardEditName": "Edit nickname",
+  "leaderboardNameTitle": "Your nickname",
+  "leaderboardSave": "Save",
+  "leaderboardNameInvalid": "Use 2 to 20 characters."
 }

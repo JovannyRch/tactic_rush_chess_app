@@ -75,6 +75,37 @@ void main() {
     expect(find.byIcon(Icons.close_rounded), findsOneWidget);
   });
 
+  testWidgets('long HUD history fits on a narrow screen', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(220, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final history = List.generate(
+      40,
+      (index) => index.isEven ? PuzzleResult.correct : PuzzleResult.wrong,
+    );
+    final state = RushState.idle(
+      RushMode.survival,
+    ).copyWith(solved: 20, strikes: 1, history: history);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: RushHud(state: state),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.byIcon(Icons.check_rounded), findsNWidgets(3));
+    expect(find.byIcon(Icons.close_rounded), findsNWidgets(3));
+  });
+
   testWidgets('quitting a game returns to the home screen', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TacticRushApp()));
     await tester.pump();

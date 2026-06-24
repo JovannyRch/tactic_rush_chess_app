@@ -6,6 +6,7 @@ import '../model/rush_mode.dart';
 import '../theme/app_theme.dart';
 import 'rush_mode_l10n.dart';
 import 'rush_screen.dart';
+import 'leaderboard_screen.dart';
 
 class ResultScreen extends ConsumerWidget {
   const ResultScreen({
@@ -34,23 +35,23 @@ class ResultScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    isRecord
-                        ? Icons.emoji_events_rounded
-                        : Icons.flag_rounded,
+                    isRecord ? Icons.emoji_events_rounded : Icons.flag_rounded,
                     size: 72,
                     color: AppTheme.brand,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     isRecord ? l10n.resultNewRecord : l10n.resultGameOver,
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     mode.label(l10n),
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(color: Colors.white54),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white54,
+                    ),
                   ),
                   const SizedBox(height: 32),
                   Text(
@@ -63,8 +64,9 @@ class ResultScreen extends ConsumerWidget {
                   ),
                   Text(
                     l10n.resultPuzzlesSolved,
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(color: Colors.white54),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white54,
+                    ),
                   ),
                   const SizedBox(height: 40),
                   SizedBox(
@@ -79,6 +81,19 @@ class ResultScreen extends ConsumerWidget {
                           ),
                         );
                       },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.emoji_events_rounded),
+                      label: Text(l10n.leaderboardView),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => LeaderboardScreen(initialMode: mode),
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),

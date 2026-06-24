@@ -15,8 +15,8 @@
   "modeThreeMinutesLabel": "3 minutos",
   "modeFiveMinutesLabel": "5 minutos",
   "modeSurvivalDescription": "Dificultad creciente · 3 fallos y fuera",
-  "modeThreeMinutesDescription": "Máximos puzzles en 3:00",
-  "modeFiveMinutesDescription": "Máximos puzzles en 5:00",
+  "modeThreeMinutesDescription": "Máximos puzzles en 3:00 · 3 fallos y fuera",
+  "modeFiveMinutesDescription": "Máximos puzzles en 5:00 · 3 fallos y fuera",
 
   "quitTitle": "¿Salir de la partida?",
   "quitBody": "Se perderá el progreso actual.",
@@ -44,4 +44,17 @@
   "resultPuzzlesSolved": "puzzles resueltos",
   "resultPlayAgain": "Jugar de nuevo",
   "resultHome": "Inicio"
+  ,
+  "leaderboardTitle": "Ranking online",
+  "leaderboardView": "Ver ranking",
+  "leaderboardDaily": "Diario",
+  "leaderboardWeekly": "Semanal",
+  "leaderboardMonthly": "Mensual",
+  "leaderboardEmpty": "Todavía no hay puntuaciones. ¡Sé el primero!",
+  "leaderboardOffline": "El ranking online no está disponible ahora.",
+  "leaderboardRetry": "Reintentar",
+  "leaderboardEditName": "Editar apodo",
+  "leaderboardNameTitle": "Tu apodo",
+  "leaderboardSave": "Guardar",
+  "leaderboardNameInvalid": "Usa entre 2 y 20 caracteres."
 }

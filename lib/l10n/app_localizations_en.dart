@@ -41,10 +41,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Increasing difficulty · 3 misses and out';
 
   @override
-  String get modeThreeMinutesDescription => 'Max puzzles in 3:00';
+  String get modeThreeMinutesDescription =>
+      'Max puzzles in 3:00 · 3 misses and out';
 
   @override
-  String get modeFiveMinutesDescription => 'Max puzzles in 5:00';
+  String get modeFiveMinutesDescription =>
+      'Max puzzles in 5:00 · 3 misses and out';
 
   @override
   String get quitTitle => 'Quit the game?';
@@ -98,4 +100,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resultHome => 'Home';
+
+  @override
+  String get leaderboardTitle => 'Online rankings';
+
+  @override
+  String get leaderboardView => 'View ranking';
+
+  @override
+  String get leaderboardDaily => 'Daily';
+
+  @override
+  String get leaderboardWeekly => 'Weekly';
+
+  @override
+  String get leaderboardMonthly => 'Monthly';
+
+  @override
+  String get leaderboardEmpty => 'No scores yet. Be the first!';
+
+  @override
+  String get leaderboardOffline =>
+      'The online ranking is unavailable right now.';
+
+  @override
+  String get leaderboardRetry => 'Retry';
+
+  @override
+  String get leaderboardEditName => 'Edit nickname';
+
+  @override
+  String get leaderboardNameTitle => 'Your nickname';
+
+  @override
+  String get leaderboardSave => 'Save';
+
+  @override
+  String get leaderboardNameInvalid => 'Use 2 to 20 characters.';
 }

@@ -7,6 +7,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/puzzle_repository.dart';
+import '../data/leaderboard_service.dart';
 import '../data/score_storage.dart';
 import '../logic/chess_bridge.dart';
 import '../model/puzzle.dart';
@@ -67,7 +68,8 @@ class RushController extends Notifier<RushState> {
 
     final repo = ref.read(puzzleRepositoryProvider);
     final local = await repo.loadLocalPool();
-    _pool.addAll(local);
+    final recent = await ref.read(scoreStorageProvider).recentPuzzleIds();
+    _pool.addAll(repo.buildSessionPool(local, recent.toSet()));
     if (_pool.isEmpty) {
       state = state.copyWith(status: RushStatus.finished);
       return;
@@ -94,6 +96,7 @@ class RushController extends Notifier<RushState> {
   void _loadCurrent() {
     final puzzle = _pool[_poolIndex % _pool.length];
     _puzzle = puzzle;
+    unawaited(ref.read(scoreStorageProvider).rememberPuzzle(puzzle.id));
     final position = positionFromFen(puzzle.fen);
     _position = position;
     _moveIndex = 0;
@@ -259,6 +262,9 @@ class RushController extends Notifier<RushState> {
         .read(scoreStorageProvider)
         .saveIfBest(_mode, state.solved)
         .catchError((_) => false);
+    unawaited(
+      ref.read(leaderboardServiceProvider).submitScore(_mode, state.solved),
+    );
     if (!_finishing) return;
     state = state.copyWith(
       status: RushStatus.finished,
