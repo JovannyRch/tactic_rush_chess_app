@@ -2,11 +2,13 @@ import 'package:chessground/chessground.dart' as cg;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../model/rush_mode.dart';
 import '../rush/rush_controller.dart';
 import '../rush/rush_state.dart';
 import '../theme/app_theme.dart';
 import 'result_screen.dart';
+import 'rush_mode_l10n.dart';
 import 'widgets/rush_hud.dart';
 
 class RushScreen extends ConsumerStatefulWidget {
@@ -19,6 +21,8 @@ class RushScreen extends ConsumerStatefulWidget {
 }
 
 class _RushScreenState extends ConsumerState<RushScreen> {
+  bool _canPop = false;
+
   @override
   void initState() {
     super.initState();
@@ -28,27 +32,39 @@ class _RushScreenState extends ConsumerState<RushScreen> {
   }
 
   Future<bool> _confirmQuit() async {
+    final l10n = AppLocalizations.of(context)!;
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('¿Salir de la partida?'),
-        content: const Text('Se perderá el progreso actual.'),
+        title: Text(l10n.quitTitle),
+        content: Text(l10n.quitBody),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Seguir')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.quitCancel),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Salir')),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.quitConfirm),
+          ),
         ],
       ),
     );
     return result ?? false;
   }
 
+  void _quit() {
+    ref.read(rushControllerProvider.notifier).quit();
+    setState(() => _canPop = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Navegar a resultados cuando la sesión termina.
+    final l10n = AppLocalizations.of(context)!;
+
     ref.listen(rushControllerProvider, (prev, next) {
       if (prev?.status != RushStatus.finished &&
           next.status == RushStatus.finished) {
@@ -67,12 +83,10 @@ class _RushScreenState extends ConsumerState<RushScreen> {
     final state = ref.watch(rushControllerProvider);
 
     return PopScope(
-      canPop: false,
+      canPop: _canPop,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
-        if (await _confirmQuit() && mounted) {
-          ref.read(rushControllerProvider.notifier).quit();
-        }
+        if (await _confirmQuit() && mounted) _quit();
       },
       child: Scaffold(
         body: SafeArea(
@@ -85,25 +99,25 @@ class _RushScreenState extends ConsumerState<RushScreen> {
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
                       onPressed: () async {
-                        if (await _confirmQuit() && mounted) {
-                          ref.read(rushControllerProvider.notifier).quit();
-                        }
+                        if (await _confirmQuit() && mounted) _quit();
                       },
                     ),
                     const Spacer(),
-                    Text(widget.mode.label,
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      widget.mode.label(l10n),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const Spacer(),
                     const SizedBox(width: 48),
                   ],
                 ),
                 const SizedBox(height: 8),
                 RushHud(state: state),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
+                _ComboBanner(state: state),
+                const SizedBox(height: 12),
                 Expanded(
-                  child: Center(
-                    child: _BoardArea(state: state),
-                  ),
+                  child: Center(child: _BoardArea(state: state)),
                 ),
                 const SizedBox(height: 12),
                 _TurnIndicator(state: state),
@@ -111,6 +125,64 @@ class _RushScreenState extends ConsumerState<RushScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ComboBanner extends StatelessWidget {
+  const _ComboBanner({required this.state});
+
+  final RushState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final show = state.feedback == MoveFeedback.correct && state.combo >= 2;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
+    return SizedBox(
+      height: 54,
+      child: AnimatedSwitcher(
+        duration: reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 280),
+        switchInCurve: Curves.easeOutBack,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.82, end: 1).animate(animation),
+            child: child,
+          ),
+        ),
+        child: show
+            ? Column(
+                key: ValueKey('combo-${state.combo}'),
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    state.combo >= 5 ? l10n.comboPerfect : l10n.comboGreat,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: state.combo >= 5
+                          ? const Color(0xFFFFC857)
+                          : AppTheme.correct,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.comboCount(state.combo),
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Colors.white70,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                ],
+              )
+            : const SizedBox(key: ValueKey('no-combo')),
       ),
     );
   }
@@ -132,8 +204,9 @@ class _BoardArea extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final size =
-            constraints.biggest.shortestSide.clamp(0.0, 480.0).toDouble();
+        final size = constraints.biggest.shortestSide
+            .clamp(0.0, 480.0)
+            .toDouble();
         return Stack(
           alignment: Alignment.center,
           children: [
@@ -168,7 +241,6 @@ class _BoardArea extends ConsumerWidget {
   }
 }
 
-/// Marca visual de acierto/error que aparece brevemente sobre el tablero.
 class _FeedbackBadge extends StatelessWidget {
   const _FeedbackBadge({required this.feedback, required this.size});
 
@@ -187,8 +259,9 @@ class _FeedbackBadge extends StatelessWidget {
           width: size * 0.28,
           height: size * 0.28,
           decoration: BoxDecoration(
-            color: (correct ? AppTheme.correct : AppTheme.wrong)
-                .withValues(alpha: 0.92),
+            color: (correct ? AppTheme.correct : AppTheme.wrong).withValues(
+              alpha: 0.92,
+            ),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -209,18 +282,19 @@ class _TurnIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final (text, color) = switch (state.feedback) {
-      MoveFeedback.correct => ('¡Correcto!', AppTheme.correct),
-      MoveFeedback.wrong => ('Fallo', AppTheme.wrong),
+      MoveFeedback.correct => (l10n.feedbackCorrect, AppTheme.correct),
+      MoveFeedback.wrong => (l10n.feedbackWrong, AppTheme.wrong),
       MoveFeedback.none => (
-          state.interactable
-              ? (state.orientation == cg.Side.white
-                  ? 'Juegan blancas · encuentra la mejor jugada'
-                  : 'Juegan negras · encuentra la mejor jugada')
-              : 'Respondiendo…',
-          Colors.white60,
-        ),
+        state.interactable
+            ? (state.orientation == cg.Side.white
+                  ? l10n.turnWhite
+                  : l10n.turnBlack)
+            : l10n.turnReplying,
+        Colors.white60,
+      ),
     };
     return AnimatedDefaultTextStyle(
       duration: const Duration(milliseconds: 150),

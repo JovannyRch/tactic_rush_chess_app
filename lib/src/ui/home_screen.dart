@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../data/score_storage.dart';
 import '../model/rush_mode.dart';
 import '../theme/app_theme.dart';
+import 'rush_mode_l10n.dart';
 import 'rush_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -35,11 +37,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => RushScreen(mode: mode)),
     );
-    _loadScores(); // refrescar récords al volver
+    _loadScores();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     return Scaffold(
       body: SafeArea(
@@ -52,11 +55,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const _Logo(),
                 const SizedBox(height: 8),
                 Text(
-                  'Resuelve tantos puzzles como puedas.',
+                  l10n.homeSubtitle,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white70,
-                  ),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(color: Colors.white70),
                 ),
                 const SizedBox(height: 32),
                 for (final mode in RushMode.values) ...[
@@ -69,8 +71,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
                 const SizedBox(height: 16),
                 Text(
-                  'Puzzles de lichess (CC0) · tablero y lógica con\n'
-                  'chessground + dartchess',
+                  l10n.homeAttribution,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: Colors.white38),
@@ -89,6 +90,7 @@ class _Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         Container(
@@ -102,7 +104,7 @@ class _Logo extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          'Tactic Rush',
+          l10n.appTitle,
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 letterSpacing: -0.5,
@@ -124,14 +126,9 @@ class _ModeCard extends StatelessWidget {
   final int best;
   final VoidCallback onTap;
 
-  IconData get _icon => switch (mode) {
-        RushMode.survival => Icons.favorite_rounded,
-        RushMode.threeMinutes => Icons.timer_outlined,
-        RushMode.fiveMinutes => Icons.timer_rounded,
-      };
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -148,7 +145,7 @@ class _ModeCard extends StatelessWidget {
                   color: AppTheme.seed.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(_icon, color: AppTheme.seed),
+                child: Icon(mode.icon, color: AppTheme.seed),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -156,13 +153,13 @@ class _ModeCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      mode.label,
+                      mode.label(l10n),
                       style: theme.textTheme.titleLarge
                           ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      mode.description,
+                      mode.description(l10n),
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: Colors.white60),
                     ),
@@ -179,9 +176,11 @@ class _ModeCard extends StatelessWidget {
                       color: AppTheme.seed,
                     ),
                   ),
-                  Text('récord',
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: Colors.white38)),
+                  Text(
+                    l10n.record,
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: Colors.white38),
+                  ),
                 ],
               ),
             ],

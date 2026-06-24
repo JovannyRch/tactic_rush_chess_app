@@ -69,10 +69,15 @@ flutter run
 
 ## Puzzles
 
-El bundle `assets/puzzles/sample_puzzles.json` se incluye listo para usar
-(funciona **offline**). Cuando hay red, el repositorio amplía el repertorio con
-la API pública de lichess de forma transparente (si falla la red, degrada al
-bundle local sin interrumpir la partida).
+El bundle `assets/puzzles/sample_puzzles.json` incluye 900 puzzles oficiales de
+Lichess listos para usar **offline**, ordenados por rating de 602 a 2396. Cuando
+hay red, el repositorio puede ampliar el repertorio sin interrumpir la partida.
+
+Regenerar la muestra equilibrada desde la base CC0 oficial de Lichess:
+
+```bash
+dart run tool/import_lichess_puzzles.dart 100
+```
 
 Regenerar el bundle local (mates forzados garantizados, sin red):
 

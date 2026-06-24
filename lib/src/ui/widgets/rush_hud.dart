@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../model/rush_mode.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../rush/rush_state.dart';
 import '../../theme/app_theme.dart';
 
-/// Marcador superior: puntuación grande y, según el modo, vidas (corazones) o
-/// cronómetro.
 class RushHud extends StatelessWidget {
   const RushHud({super.key, required this.state});
 
@@ -13,31 +11,93 @@ class RushHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text('RESUELTOS',
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: Colors.white38, letterSpacing: 1.5)),
-            Text(
-              '${state.solved}',
-              style: theme.textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppTheme.correct,
-                height: 1,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.hudSolved,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: Colors.white38,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                Text(
+                  '${state.solved}',
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.correct,
+                    height: 1,
+                  ),
+                ),
+              ],
             ),
+            if (state.mode.maxStrikes != null)
+              _Lives(strikes: state.strikes, allowed: state.mode.maxStrikes!)
+            else
+              _Clock(l10n: l10n, secondsLeft: state.secondsLeft),
           ],
         ),
-        if (state.mode.maxStrikes != null)
-          _Lives(strikes: state.strikes, allowed: state.mode.maxStrikes!)
-        else
-          _Clock(secondsLeft: state.secondsLeft, mode: state.mode),
+        if (state.history.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _History(results: state.history),
+        ],
+      ],
+    );
+  }
+}
+
+class _History extends StatelessWidget {
+  const _History({required this.results});
+
+  final List<PuzzleResult> results;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final visible = results.length > 12
+        ? results.sublist(results.length - 12)
+        : results;
+    return Row(
+      key: const ValueKey('rush-history'),
+      children: [
+        for (final (index, result) in visible.indexed)
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: AnimatedContainer(
+              key: ValueKey('${results.length}-$index-${result.name}'),
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 220),
+              curve: Curves.easeOutBack,
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: result == PuzzleResult.correct
+                    ? AppTheme.correct
+                    : AppTheme.wrong,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                result == PuzzleResult.correct
+                    ? Icons.check_rounded
+                    : Icons.close_rounded,
+                size: 15,
+                color: Colors.white,
+                semanticLabel: result == PuzzleResult.correct
+                    ? l10n.feedbackCorrect
+                    : l10n.feedbackWrong,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -69,10 +129,10 @@ class _Lives extends StatelessWidget {
 }
 
 class _Clock extends StatelessWidget {
-  const _Clock({required this.secondsLeft, required this.mode});
+  const _Clock({required this.l10n, required this.secondsLeft});
 
+  final AppLocalizations l10n;
   final int secondsLeft;
-  final RushMode mode;
 
   @override
   Widget build(BuildContext context) {
@@ -83,9 +143,13 @@ class _Clock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text('TIEMPO',
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: Colors.white38, letterSpacing: 1.5)),
+        Text(
+          l10n.hudTime,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: Colors.white38,
+            letterSpacing: 1.5,
+          ),
+        ),
         Text(
           '$m:${s.toString().padLeft(2, '0')}',
           style: theme.textTheme.displaySmall?.copyWith(

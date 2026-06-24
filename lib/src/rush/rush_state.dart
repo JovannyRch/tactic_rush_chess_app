@@ -8,6 +8,8 @@ enum RushStatus { idle, loading, playing, finished }
 /// Resultado de la última jugada del jugador, para feedback visual.
 enum MoveFeedback { none, correct, wrong }
 
+enum PuzzleResult { correct, wrong }
+
 /// Estado inmutable de una sesión de Puzzle Rush. El controlador mantiene la
 /// posición de ajedrez "viva" aparte; aquí solo va lo que la UI necesita pintar.
 class RushState {
@@ -24,6 +26,8 @@ class RushState {
     required this.strikes,
     required this.secondsLeft,
     required this.feedback,
+    required this.combo,
+    required this.history,
     this.lastMove,
     this.puzzleId,
     this.isRecord = false,
@@ -46,25 +50,29 @@ class RushState {
   final int strikes;
   final int secondsLeft;
   final MoveFeedback feedback;
+  final int combo;
+  final List<PuzzleResult> history;
   final String? puzzleId;
   final bool isRecord;
 
   int? get strikesAllowed => mode.maxStrikes;
 
   factory RushState.idle(RushMode mode) => RushState(
-        mode: mode,
-        status: RushStatus.idle,
-        fen: _emptyFen,
-        orientation: cg.Side.white,
-        sideToMove: cg.Side.white,
-        validMoves: const IMapConst({}),
-        interactable: false,
-        isCheck: false,
-        solved: 0,
-        strikes: 0,
-        secondsLeft: mode.timeLimit?.inSeconds ?? 0,
-        feedback: MoveFeedback.none,
-      );
+    mode: mode,
+    status: RushStatus.idle,
+    fen: _emptyFen,
+    orientation: cg.Side.white,
+    sideToMove: cg.Side.white,
+    validMoves: const IMapConst({}),
+    interactable: false,
+    isCheck: false,
+    solved: 0,
+    strikes: 0,
+    secondsLeft: mode.timeLimit?.inSeconds ?? 0,
+    feedback: MoveFeedback.none,
+    combo: 0,
+    history: const [],
+  );
 
   RushState copyWith({
     RushStatus? status,
@@ -78,6 +86,8 @@ class RushState {
     int? strikes,
     int? secondsLeft,
     MoveFeedback? feedback,
+    int? combo,
+    List<PuzzleResult>? history,
     String? puzzleId,
     bool? isRecord,
     cg.Move? lastMove,
@@ -96,6 +106,8 @@ class RushState {
       strikes: strikes ?? this.strikes,
       secondsLeft: secondsLeft ?? this.secondsLeft,
       feedback: feedback ?? this.feedback,
+      combo: combo ?? this.combo,
+      history: history ?? this.history,
       puzzleId: puzzleId ?? this.puzzleId,
       isRecord: isRecord ?? this.isRecord,
       lastMove: clearLastMove ? null : (lastMove ?? this.lastMove),

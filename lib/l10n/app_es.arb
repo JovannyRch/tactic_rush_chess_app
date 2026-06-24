@@ -1,0 +1,47 @@
+{
+  "@@locale": "es",
+
+  "appTitle": "Tactic Rush",
+
+  "homeSubtitle": "Resuelve tantos puzzles como puedas.",
+  "homeAttribution": "Puzzles de lichess (CC0) · tablero y lógica con chessground + dartchess",
+
+  "record": "récord",
+
+  "hudSolved": "RESUELTOS",
+  "hudTime": "TIEMPO",
+
+  "modeSurvivalLabel": "Supervivencia",
+  "modeThreeMinutesLabel": "3 minutos",
+  "modeFiveMinutesLabel": "5 minutos",
+  "modeSurvivalDescription": "Dificultad creciente · 3 fallos y fuera",
+  "modeThreeMinutesDescription": "Máximos puzzles en 3:00",
+  "modeFiveMinutesDescription": "Máximos puzzles en 5:00",
+
+  "quitTitle": "¿Salir de la partida?",
+  "quitBody": "Se perderá el progreso actual.",
+  "quitCancel": "Seguir",
+  "quitConfirm": "Salir",
+
+  "feedbackCorrect": "¡Correcto!",
+  "feedbackWrong": "Fallo",
+  "comboGreat": "¡GENIAL!",
+  "comboPerfect": "¡PERFECTO!",
+  "comboCount": "COMBO x{count}",
+  "@comboCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "turnWhite": "Juegan blancas · encuentra la mejor jugada",
+  "turnBlack": "Juegan negras · encuentra la mejor jugada",
+  "turnReplying": "Respondiendo…",
+
+  "resultNewRecord": "¡Nuevo récord!",
+  "resultGameOver": "Fin de la partida",
+  "resultPuzzlesSolved": "puzzles resueltos",
+  "resultPlayAgain": "Jugar de nuevo",
+  "resultHome": "Inicio"
+}

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../model/rush_mode.dart';
 import '../theme/app_theme.dart';
+import 'rush_mode_l10n.dart';
 import 'rush_screen.dart';
 
 class ResultScreen extends ConsumerWidget {
@@ -19,6 +21,7 @@ class ResultScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     return Scaffold(
       body: SafeArea(
@@ -31,20 +34,25 @@ class ResultScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    isRecord ? Icons.emoji_events_rounded : Icons.flag_rounded,
+                    isRecord
+                        ? Icons.emoji_events_rounded
+                        : Icons.flag_rounded,
                     size: 72,
-                    color: isRecord ? const Color(0xFFE9B949) : AppTheme.seed,
+                    color:
+                        isRecord ? const Color(0xFFE9B949) : AppTheme.seed,
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    isRecord ? '¡Nuevo récord!' : 'Fin de la partida',
+                    isRecord ? l10n.resultNewRecord : l10n.resultGameOver,
                     style: theme.textTheme.headlineSmall
                         ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
-                  Text(mode.label,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(color: Colors.white54)),
+                  Text(
+                    mode.label(l10n),
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(color: Colors.white54),
+                  ),
                   const SizedBox(height: 32),
                   Text(
                     '$score',
@@ -54,15 +62,17 @@ class ResultScreen extends ConsumerWidget {
                       height: 1,
                     ),
                   ),
-                  Text('puzzles resueltos',
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(color: Colors.white54)),
+                  Text(
+                    l10n.resultPuzzlesSolved,
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(color: Colors.white54),
+                  ),
                   const SizedBox(height: 40),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
                       icon: const Icon(Icons.refresh_rounded),
-                      label: const Text('Jugar de nuevo'),
+                      label: Text(l10n.resultPlayAgain),
                       onPressed: () {
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
@@ -77,7 +87,7 @@ class ResultScreen extends ConsumerWidget {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.home_rounded),
-                      label: const Text('Inicio'),
+                      label: Text(l10n.resultHome),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),

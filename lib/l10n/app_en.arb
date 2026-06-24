@@ -1,0 +1,47 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Tactic Rush",
+
+  "homeSubtitle": "Solve as many puzzles as you can.",
+  "homeAttribution": "Puzzles by lichess (CC0) · board & logic with chessground + dartchess",
+
+  "record": "record",
+
+  "hudSolved": "SOLVED",
+  "hudTime": "TIME",
+
+  "modeSurvivalLabel": "Survival",
+  "modeThreeMinutesLabel": "3 minutes",
+  "modeFiveMinutesLabel": "5 minutes",
+  "modeSurvivalDescription": "Increasing difficulty · 3 misses and out",
+  "modeThreeMinutesDescription": "Max puzzles in 3:00",
+  "modeFiveMinutesDescription": "Max puzzles in 5:00",
+
+  "quitTitle": "Quit the game?",
+  "quitBody": "Current progress will be lost.",
+  "quitCancel": "Continue",
+  "quitConfirm": "Quit",
+
+  "feedbackCorrect": "Correct!",
+  "feedbackWrong": "Miss",
+  "comboGreat": "GREAT!",
+  "comboPerfect": "PERFECT!",
+  "comboCount": "{count} COMBO",
+  "@comboCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "turnWhite": "White to move · find the best move",
+  "turnBlack": "Black to move · find the best move",
+  "turnReplying": "Replying…",
+
+  "resultNewRecord": "New record!",
+  "resultGameOver": "Game over",
+  "resultPuzzlesSolved": "puzzles solved",
+  "resultPlayAgain": "Play again",
+  "resultHome": "Home"
+}

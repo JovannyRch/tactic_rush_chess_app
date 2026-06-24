@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:tactic_rush_chess_app/src/data/score_storage.dart';
 import 'package:tactic_rush_chess_app/src/model/rush_mode.dart';
 import 'package:tactic_rush_chess_app/src/rush/rush_controller.dart';
 import 'package:tactic_rush_chess_app/src/rush/rush_state.dart';
@@ -32,22 +33,26 @@ void main() {
     expect(state.validMoves, isNotEmpty);
   });
 
-  test('una jugada correcta resuelve un mate en 1 y suma al marcador',
-      () async {
-    final c = makeContainer();
-    final notifier = c.read(rushControllerProvider.notifier);
-    await notifier.start(RushMode.survival);
+  test(
+    'una jugada correcta resuelve un mate en 1 y suma al marcador',
+    () async {
+      final c = makeContainer();
+      final notifier = c.read(rushControllerProvider.notifier);
+      await notifier.start(RushMode.survival);
 
-    // El primer puzzle (menor rating) es un mate en 1: una sola jugada.
-    final puzzle = notifier.debugCurrentPuzzle!;
-    expect(puzzle.moves.length, 1);
+      // El primer puzzle (menor rating) es un mate en 1: una sola jugada.
+      final puzzle = notifier.debugCurrentPuzzle!;
+      expect(puzzle.moves.length, 1);
 
-    notifier.onUserMove(cg.Move.fromUci(puzzle.moves.first));
+      notifier.onUserMove(cg.Move.fromUci(puzzle.moves.first));
 
-    final state = c.read(rushControllerProvider);
-    expect(state.feedback, MoveFeedback.correct);
-    expect(state.solved, 1);
-  });
+      final state = c.read(rushControllerProvider);
+      expect(state.feedback, MoveFeedback.correct);
+      expect(state.solved, 1);
+      expect(state.combo, 1);
+      expect(state.history, [PuzzleResult.correct]);
+    },
+  );
 
   test('una jugada incorrecta cuenta como fallo (strike)', () async {
     final c = makeContainer();
@@ -65,6 +70,38 @@ void main() {
       notifier.onUserMove(wrong);
       final state = c.read(rushControllerProvider);
       expect(state.strikes + state.solved, greaterThanOrEqualTo(1));
+      expect(state.combo, 0);
+      expect(state.history.last, PuzzleResult.wrong);
     }
+  });
+
+  test('finished ya incluye el nuevo récord', () async {
+    final c = makeContainer();
+    final notifier = c.read(rushControllerProvider.notifier);
+    await notifier.start(RushMode.survival);
+
+    notifier.onUserMove(
+      cg.Move.fromUci(notifier.debugCurrentPuzzle!.moves.first),
+    );
+    await notifier.debugFinish();
+
+    final state = c.read(rushControllerProvider);
+    expect(state.status, RushStatus.finished);
+    expect(state.solved, 1);
+    expect(state.isRecord, isTrue);
+  });
+
+  test('quit descarta la sesión sin guardar resultado', () async {
+    final c = makeContainer();
+    final notifier = c.read(rushControllerProvider.notifier);
+    await notifier.start(RushMode.survival);
+
+    notifier.onUserMove(
+      cg.Move.fromUci(notifier.debugCurrentPuzzle!.moves.first),
+    );
+    notifier.quit();
+
+    expect(c.read(rushControllerProvider).status, RushStatus.idle);
+    expect(await c.read(scoreStorageProvider).bestScore(RushMode.survival), 0);
   });
 }

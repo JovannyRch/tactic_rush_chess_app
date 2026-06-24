@@ -15,8 +15,9 @@ import '../sound/sound_service.dart';
 import 'rush_state.dart';
 
 /// Controlador único de Puzzle Rush. El modo se fija al llamar a [start].
-final rushControllerProvider =
-    NotifierProvider<RushController, RushState>(RushController.new);
+final rushControllerProvider = NotifierProvider<RushController, RushState>(
+  RushController.new,
+);
 
 /// Orquesta el bucle de juego de Puzzle Rush: cola de puzzles con dificultad
 /// creciente, validación de jugadas contra la línea solución, reproducción
@@ -34,9 +35,10 @@ class RushController extends Notifier<RushState> {
   Timer? _replyTimer;
   Timer? _advanceTimer;
   bool _toppingUp = false;
+  bool _finishing = false;
 
   static const _replyDelay = Duration(milliseconds: 360);
-  static const _solvedDelay = Duration(milliseconds: 480);
+  static const _solvedDelay = Duration(milliseconds: 700);
   static const _wrongDelay = Duration(milliseconds: 760);
 
   @override
@@ -60,6 +62,7 @@ class RushController extends Notifier<RushState> {
     _pool.clear();
     _poolIndex = 0;
     _moveIndex = 0;
+    _finishing = false;
     state = RushState.idle(_mode).copyWith(status: RushStatus.loading);
 
     final repo = ref.read(puzzleRepositoryProvider);
@@ -77,8 +80,12 @@ class RushController extends Notifier<RushState> {
 
   void quit() {
     _cancelTimers();
-    _finish();
+    _finishing = false;
+    state = RushState.idle(_mode);
   }
+
+  @visibleForTesting
+  Future<void> debugFinish() => _finish();
 
   // ---------------------------------------------------------------------------
   // Carga de puzzles
@@ -135,7 +142,8 @@ class RushController extends Notifier<RushState> {
 
     // Correcta si coincide con la línea, o si es un mate alternativo legal.
     final matchesLine = userUci == expected;
-    final isAltMate = !matchesLine &&
+    final isAltMate =
+        !matchesLine &&
         position.isLegal(dcMove) &&
         position.play(dcMove).isCheckmate;
 
@@ -148,7 +156,9 @@ class RushController extends Notifier<RushState> {
     final after = position.play(dcMove);
     _position = after;
     _moveIndex++;
-    SoundService.instance.move(capture: position.board.pieceAt(dcMove.to) != null);
+    SoundService.instance.move(
+      capture: position.board.pieceAt(dcMove.to) != null,
+    );
     _renderPosition(after, lastMove: move, interactable: false);
 
     if (isAltMate || _moveIndex >= puzzle.moves.length) {
@@ -166,8 +176,9 @@ class RushController extends Notifier<RushState> {
       final next = current.play(oppMove);
       _position = next;
       _moveIndex++;
-      SoundService.instance
-          .move(capture: current.board.pieceAt(oppMove.to) != null);
+      SoundService.instance.move(
+        capture: current.board.pieceAt(oppMove.to) != null,
+      );
       _renderPosition(next, lastMove: toCgMove(oppUci), interactable: true);
     });
   }
@@ -177,6 +188,8 @@ class RushController extends Notifier<RushState> {
     state = state.copyWith(
       solved: state.solved + 1,
       feedback: MoveFeedback.correct,
+      combo: state.combo + 1,
+      history: [...state.history, PuzzleResult.correct],
       interactable: false,
     );
     _advanceTimer = Timer(_solvedDelay, _advanceToNext);
@@ -188,6 +201,8 @@ class RushController extends Notifier<RushState> {
     state = state.copyWith(
       strikes: strikes,
       feedback: MoveFeedback.wrong,
+      combo: 0,
+      history: [...state.history, PuzzleResult.wrong],
       interactable: false,
     );
 
@@ -235,16 +250,22 @@ class RushController extends Notifier<RushState> {
     });
   }
 
-  void _finish() {
-    if (state.status == RushStatus.finished) return;
+  Future<void> _finish() async {
+    if (_finishing || state.status == RushStatus.finished) return;
+    _finishing = true;
     _cancelTimers();
     SoundService.instance.result(state.solved);
-    state = state.copyWith(status: RushStatus.finished, interactable: false);
-    ref.read(scoreStorageProvider).saveIfBest(_mode, state.solved).then((rec) {
-      if (state.status == RushStatus.finished) {
-        state = state.copyWith(isRecord: rec);
-      }
-    });
+    final record = await ref
+        .read(scoreStorageProvider)
+        .saveIfBest(_mode, state.solved)
+        .catchError((_) => false);
+    if (!_finishing) return;
+    state = state.copyWith(
+      status: RushStatus.finished,
+      interactable: false,
+      isRecord: record,
+    );
+    _finishing = false;
   }
 
   Future<void> _maybeTopUp() async {
