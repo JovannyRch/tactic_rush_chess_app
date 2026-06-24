@@ -164,9 +164,7 @@ class _ComboBanner extends StatelessWidget {
                   Text(
                     state.combo >= 5 ? l10n.comboPerfect : l10n.comboGreat,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: state.combo >= 5
-                          ? const Color(0xFFFFC857)
-                          : AppTheme.correct,
+                      color: AppTheme.brand,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.2,
                       height: 1,
@@ -213,7 +211,7 @@ class _BoardArea extends ConsumerWidget {
             cg.Board(
               size: size,
               settings: const cg.BoardSettings(
-                colorScheme: cg.BoardColorScheme.green,
+                colorScheme: cg.BoardColorScheme.brown,
                 animationDuration: Duration(milliseconds: 220),
                 showValidMoves: true,
                 showLastMove: true,

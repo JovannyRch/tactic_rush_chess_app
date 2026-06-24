@@ -38,8 +38,7 @@ class ResultScreen extends ConsumerWidget {
                         ? Icons.emoji_events_rounded
                         : Icons.flag_rounded,
                     size: 72,
-                    color:
-                        isRecord ? const Color(0xFFE9B949) : AppTheme.seed,
+                    color: AppTheme.brand,
                   ),
                   const SizedBox(height: 16),
                   Text(

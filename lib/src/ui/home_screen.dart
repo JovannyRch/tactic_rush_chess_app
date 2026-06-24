@@ -94,15 +94,27 @@ class _Logo extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 76,
-          height: 76,
+          width: 120,
+          height: 120,
           decoration: BoxDecoration(
-            color: AppTheme.seed,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.brand.withValues(alpha: 0.25),
+                blurRadius: 24,
+                spreadRadius: 4,
+              ),
+            ],
           ),
-          child: const Icon(Icons.bolt_rounded, size: 48, color: Colors.white),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Image.asset(
+              'assets/img/logo.png',
+              fit: BoxFit.cover,
+            ),
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         Text(
           l10n.appTitle,
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -142,10 +154,10 @@ class _ModeCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppTheme.seed.withValues(alpha: 0.18),
+                  color: AppTheme.brand.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(mode.icon, color: AppTheme.seed),
+                child: Icon(mode.icon, color: AppTheme.brand),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -173,7 +185,7 @@ class _ModeCard extends StatelessWidget {
                     '$best',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.seed,
+                      color: AppTheme.brand,
                     ),
                   ),
                   Text(
