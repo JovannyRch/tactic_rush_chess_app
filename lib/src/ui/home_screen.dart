@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../data/puzzle_repository.dart';
 import '../data/score_storage.dart';
+import '../model/puzzle.dart';
 import '../model/rush_mode.dart';
 import '../theme/app_theme.dart';
+import 'daily_puzzle_screen.dart';
 import 'rush_mode_l10n.dart';
 import 'rush_screen.dart';
-import 'leaderboard_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, this.debugSkipCountdown = false});
@@ -51,6 +54,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _loadScores();
   }
 
+  Future<void> _showAboutDialog(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (!context.mounted) return;
+
+    showAboutDialog(
+      context: context,
+      applicationName: l10n.appTitle,
+      applicationVersion: '${packageInfo.version}+${packageInfo.buildNumber}',
+      applicationIcon: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: AppTheme.brand,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.bolt_rounded, color: Colors.white),
+      ),
+      children: [
+        const SizedBox(height: 16),
+        Text(
+          l10n.homeAttribution,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -60,35 +91,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 460),
-            child: ListView(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
-              children: [
+              child: Column(
+                children: [
                 const _Logo(),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const SizedBox(width: 48),
-                    Expanded(
-                      child: Text(
-                        l10n.homeSubtitle,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: l10n.leaderboardTitle,
-                      icon: const Icon(Icons.emoji_events_rounded),
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const LeaderboardScreen(),
-                        ),
-                      ),
-                    ),
-                  ],
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    tooltip: l10n.aboutTitle,
+                    icon: const Icon(Icons.info_outline_rounded),
+                    onPressed: () => _showAboutDialog(context),
+                  ),
+                ),
+                Text(
+                  l10n.homeSubtitle,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: Colors.white70,
+                  ),
                 ),
                 const SizedBox(height: 20),
+                _DailyPuzzleCard(
+                  onPlay: (puzzle) => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => DailyPuzzleScreen(puzzle: puzzle),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 for (final mode in RushMode.values) ...[
                   _ModeCard(
                     mode: mode,
@@ -105,7 +137,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     color: Colors.white38,
                   ),
                 ), */
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -222,6 +255,99 @@ class _ModeCard extends StatelessWidget {
                       color: Colors.white38,
                     ),
                   ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DailyPuzzleCard extends ConsumerWidget {
+  const _DailyPuzzleCard({required this.onPlay});
+
+  final void Function(Puzzle puzzle) onPlay;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final daily = ref.watch(dailyPuzzleProvider);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: daily.value != null ? () => onPlay(daily.value!) : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppTheme.brand.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.wb_sunny_rounded,
+                      color: AppTheme.brand,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.dailyPuzzleTitle,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: daily.when(
+                            data: (puzzle) => puzzle != null
+                                ? Text(
+                                    'Rating ${puzzle.rating}',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: Colors.white60,
+                                    ),
+                                  )
+                                : Text(
+                                    'Unavailable',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: Colors.white38,
+                                    ),
+                                  ),
+                            loading: () => const SizedBox(
+                              height: 14,
+                              width: 80,
+                              child: LinearProgressIndicator(),
+                            ),
+                            error: (_, __) => Text(
+                              'Unavailable',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.white38,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (daily.value != null)
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.white38,
+                    ),
                 ],
               ),
             ],

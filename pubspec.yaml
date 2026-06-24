@@ -1,5 +1,5 @@
 name: tactic_rush_chess_app
-description: "A new Flutter project."
+description: "Tactic Rush - fast chess puzzle rushes for mobile."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -45,6 +45,7 @@ dependencies:
     sdk: flutter
   intl: ^0.20.2
   supabase_flutter: ^2.15.0
+  package_info_plus: ^10.1.0
 
 dev_dependencies:
   flutter_test:

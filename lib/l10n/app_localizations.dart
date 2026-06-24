@@ -343,6 +343,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use 2 to 20 characters.'**
   String get leaderboardNameInvalid;
+
+  /// No description provided for @dailyPuzzleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Puzzle of the day'**
+  String get dailyPuzzleTitle;
+
+  /// No description provided for @dailyPuzzleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Find the best move. One mistake ends the puzzle.'**
+  String get dailyPuzzleHint;
+
+  /// No description provided for @aboutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get aboutTitle;
 }
 
 class _AppLocalizationsDelegate

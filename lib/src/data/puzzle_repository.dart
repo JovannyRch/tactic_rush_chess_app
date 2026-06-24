@@ -7,11 +7,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:dartchess/dartchess.dart' as dc;
 
+import '../logic/chess_bridge.dart';
 import '../model/puzzle.dart';
 
 /// Provee el repositorio de puzzles a la app.
 final puzzleRepositoryProvider = Provider<PuzzleRepository>((ref) {
   return PuzzleRepository(client: http.Client());
+});
+
+/// Provee el puzzle del día de lichess.
+final dailyPuzzleProvider = FutureProvider<Puzzle?>((ref) async {
+  final repo = ref.watch(puzzleRepositoryProvider);
+  return repo.fetchDailyPuzzle();
 });
 
 /// Repositorio híbrido de puzzles:
@@ -122,6 +129,21 @@ class PuzzleRepository {
     return result;
   }
 
+  /// Trae el puzzle del día de lichess. Devuelve null si falla.
+  Future<Puzzle?> fetchDailyPuzzle() async {
+    try {
+      final res = await _client
+          .get(Uri.parse('https://lichess.org/api/puzzle/daily'))
+          .timeout(const Duration(seconds: 8));
+      if (res.statusCode != 200) return null;
+      return _fromLichessDailyJson(
+        jsonDecode(res.body) as Map<String, dynamic>,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Convierte el formato crudo de lichess (`game.pgn` + `puzzle.solution`) al
   /// modelo de la app, reconstruyendo la FEN con dartchess y normalizando la
   /// línea para que empiece por el jugador. Devuelve null si no valida.
@@ -160,6 +182,37 @@ class PuzzleRepository {
         id: puzzle['id'] as String,
         fen: pos.fen,
         moves: playerLine,
+        rating: puzzle['rating'] as int,
+        themes: (puzzle['themes'] as List?)?.cast<String>() ?? const [],
+        source: PuzzleSource.lichess,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Convierte la respuesta de `/api/puzzle/daily` al modelo de la app.
+  /// El JSON ya incluye el FEN final y la línea de solución completa.
+  Puzzle? _fromLichessDailyJson(Map<String, dynamic> json) {
+    try {
+      final puzzle = json['puzzle'] as Map<String, dynamic>;
+      final solution = (puzzle['solution'] as List).cast<String>();
+      if (solution.isEmpty) return null;
+
+      final fen = puzzle['fen'] as String;
+      dc.Position pos = dc.Chess.fromSetup(dc.Setup.parseFen(fen));
+
+      // Validar legalidad de toda la línea (empieza por el jugador).
+      for (final uci in solution) {
+        final m = dc.NormalMove.fromUci(uci);
+        if (!pos.isLegal(m)) return null;
+        pos = pos.play(m);
+      }
+
+      return Puzzle(
+        id: puzzle['id'] as String,
+        fen: fen,
+        moves: solution,
         rating: puzzle['rating'] as int,
         themes: (puzzle['themes'] as List?)?.cast<String>() ?? const [],
         source: PuzzleSource.lichess,

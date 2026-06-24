@@ -117,10 +117,10 @@ class _RushScreenState extends ConsumerState<RushScreen> {
                                   IconButton(
                                     key: const ValueKey('rush_close_button'),
                                     icon: const Icon(Icons.close_rounded),
-                                    onPressed: () async {
-                                      if (await _confirmQuit() && mounted) {
-                                        _quit();
-                                      }
+                                    onPressed: () {
+                                      _confirmQuit().then((quit) {
+                                        if (quit && mounted) _quit();
+                                      });
                                     },
                                   ),
                                   const Spacer(),

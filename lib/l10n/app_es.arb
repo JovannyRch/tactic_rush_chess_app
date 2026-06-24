@@ -56,5 +56,10 @@
   "leaderboardEditName": "Editar apodo",
   "leaderboardNameTitle": "Tu apodo",
   "leaderboardSave": "Guardar",
-  "leaderboardNameInvalid": "Usa entre 2 y 20 caracteres."
+  "leaderboardNameInvalid": "Usa entre 2 y 20 caracteres.",
+
+  "dailyPuzzleTitle": "Puzzle del día",
+  "dailyPuzzleHint": "Encuentra la mejor jugada. Un error termina el puzzle.",
+
+  "aboutTitle": "Acerca de"
 }

@@ -137,4 +137,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get leaderboardNameInvalid => 'Use 2 to 20 characters.';
+
+  @override
+  String get dailyPuzzleTitle => 'Puzzle of the day';
+
+  @override
+  String get dailyPuzzleHint =>
+      'Find the best move. One mistake ends the puzzle.';
+
+  @override
+  String get aboutTitle => 'About';
 }

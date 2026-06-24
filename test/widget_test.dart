@@ -96,7 +96,11 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+    // Esperar a que termine la carga del puzzle y se renderice el tablero.
+    for (var i = 0; i < 50; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.byType(cg.Board).evaluate().isNotEmpty) break;
+    }
 
     expect(find.byType(cg.Board), findsOneWidget);
   });
@@ -190,9 +194,12 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Survival'));
-    await tester.pump(const Duration(seconds: 1));
-    debugDumpApp();
-    await tester.tap(find.byIcon(Icons.close_rounded));
+    // Esperar a que termine la navegación y la carga del puzzle.
+    for (var i = 0; i < 50; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.byIcon(Icons.close_rounded).evaluate().isNotEmpty) break;
+    }
+    await tester.tap(find.byKey(const ValueKey('rush_close_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Quit'));
     await tester.pumpAndSettle();

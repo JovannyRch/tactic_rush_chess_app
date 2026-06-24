@@ -56,5 +56,10 @@
   "leaderboardEditName": "Edit nickname",
   "leaderboardNameTitle": "Your nickname",
   "leaderboardSave": "Save",
-  "leaderboardNameInvalid": "Use 2 to 20 characters."
+  "leaderboardNameInvalid": "Use 2 to 20 characters.",
+
+  "dailyPuzzleTitle": "Puzzle of the day",
+  "dailyPuzzleHint": "Find the best move. One mistake ends the puzzle.",
+
+  "aboutTitle": "About"
 }
