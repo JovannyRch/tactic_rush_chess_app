@@ -229,6 +229,7 @@ class RushController extends Notifier<RushState> {
         state = state.copyWith(secondsLeft: 0);
         _finish();
       } else {
+        if (left == 10) SoundService.instance.countdown();
         state = state.copyWith(secondsLeft: left);
       }
     });
@@ -237,6 +238,7 @@ class RushController extends Notifier<RushState> {
   void _finish() {
     if (state.status == RushStatus.finished) return;
     _cancelTimers();
+    SoundService.instance.result(state.solved);
     state = state.copyWith(status: RushStatus.finished, interactable: false);
     ref.read(scoreStorageProvider).saveIfBest(_mode, state.solved).then((rec) {
       if (state.status == RushStatus.finished) {

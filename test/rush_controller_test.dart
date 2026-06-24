@@ -6,10 +6,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tactic_rush_chess_app/src/model/rush_mode.dart';
 import 'package:tactic_rush_chess_app/src/rush/rush_controller.dart';
 import 'package:tactic_rush_chess_app/src/rush/rush_state.dart';
+import 'package:tactic_rush_chess_app/src/sound/sound_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    SoundService.instance.enabled = false; // sin canales de audio en tests
+  });
 
   ProviderContainer makeContainer() {
     final c = ProviderContainer();

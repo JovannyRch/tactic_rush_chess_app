@@ -7,10 +7,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tactic_rush_chess_app/src/app.dart';
 import 'package:tactic_rush_chess_app/src/model/rush_mode.dart';
 import 'package:tactic_rush_chess_app/src/ui/rush_screen.dart';
+import 'package:tactic_rush_chess_app/src/sound/sound_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    SoundService.instance.enabled = false;
+  });
 
   testWidgets('La pantalla de inicio muestra el título y los modos',
       (tester) async {

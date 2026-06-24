@@ -39,13 +39,14 @@ lib/
     rush/
       rush_state.dart           estado inmutable de la sesión
       rush_controller.dart      bucle de juego (Riverpod Notifier)
-    sound/sound_service.dart    feedback de audio/háptico
+    sound/sound_service.dart    feedback de audio (audioplayers) + háptico
     ui/
       home_screen.dart          selección de modo + récords
       rush_screen.dart          tablero + HUD + feedback
       result_screen.dart        marcador final
       widgets/rush_hud.dart     puntuación, vidas, cronómetro
 assets/puzzles/sample_puzzles.json   bundle de arranque (offline)
+assets/sounds/                       efectos de sonido (mp3)
 tool/
   build_local_puzzles.dart      genera puzzles de mate forzado verificados (sin red)
   fetch_puzzles.dart            descarga puzzles reales de la API de lichess
@@ -96,9 +97,24 @@ Cubren: validez del bundle (toda solución es legal y termina en mate), el bucle
 de resolución del controlador (acierto suma, fallo resta vida) y el render del
 tablero.
 
+## Sonido
+
+Efectos en `assets/sounds/` (mp3), reproducidos con `audioplayers`:
+
+| Evento | Sample |
+|---|---|
+| Puzzle resuelto | `correct.mp3` |
+| Fallo | `incorrect.mp3` |
+| Cuenta atrás (a 10 s del final en modos por tiempo) | `countdown.mp3` |
+| Resultado final (según puntuación) | `result_{good,normal,bad}.mp3` |
+
+Las jugadas usan click de sistema + vibración. Todo el audio se puede
+desactivar con `SoundService.instance.enabled = false`.
+
 ## Licencias y atribución
 
 - `chessground` y `dartchess`: GPL-3.0 (lichess-org).
 - Puzzles de lichess: dominio público (**CC0**).
+- Efectos de sonido: tomados del proyecto [mathrush](https://gitlab.com/jovannyrch/mathrush).
 - Este proyecto es open source. Al usar dependencias GPL, distribúyelo de forma
   compatible con GPL-3.0.
