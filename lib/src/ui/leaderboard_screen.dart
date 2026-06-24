@@ -159,7 +159,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                         child: ListView.separated(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                           itemCount: entries.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (context, index) =>
                               const SizedBox(height: 8),
                           itemBuilder: (context, index) {
                             final entry = entries[index];

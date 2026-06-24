@@ -1,3 +1,6 @@
+/// Origen de un puzzle (útil para depuración y métricas).
+enum PuzzleSource { local, lichess, blitztactics }
+
 /// Un puzzle táctico normalizado al modelo de la app.
 ///
 /// A diferencia del formato crudo de lichess, aquí [fen] ya es la posición que
@@ -11,6 +14,9 @@ class Puzzle {
     required this.moves,
     required this.rating,
     this.themes = const [],
+    this.source = PuzzleSource.local,
+    this.setupFen,
+    this.setupMove,
   });
 
   final String id;
@@ -18,6 +24,14 @@ class Puzzle {
   final List<String> moves;
   final int rating;
   final List<String> themes;
+  final PuzzleSource source;
+
+  /// FEN de la posición justo antes de la jugada de preparación del rival.
+  /// Si existe, la UI puede animar esa jugada antes de dejar jugar al usuario.
+  final String? setupFen;
+
+  /// Jugada de preparación del rival (UCI) que lleva a [fen].
+  final String? setupMove;
 
   factory Puzzle.fromJson(Map<String, dynamic> json) {
     return Puzzle(
@@ -27,6 +41,11 @@ class Puzzle {
       rating: json['rating'] as int,
       themes:
           (json['themes'] as List?)?.cast<String>() ?? const <String>[],
+      source: PuzzleSource.values.byName(
+        (json['source'] as String?) ?? 'local',
+      ),
+      setupFen: json['setupFen'] as String?,
+      setupMove: json['setupMove'] as String?,
     );
   }
 
@@ -36,6 +55,9 @@ class Puzzle {
         'moves': moves,
         'rating': rating,
         'themes': themes,
+        'source': source.name,
+        if (setupFen != null) 'setupFen': setupFen,
+        if (setupMove != null) 'setupMove': setupMove,
       };
 
   /// URL del puzzle en lichess (útil para depurar / abrir en el navegador).

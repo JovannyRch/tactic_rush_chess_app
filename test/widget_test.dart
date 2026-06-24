@@ -3,18 +3,60 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:tactic_rush_chess_app/l10n/app_localizations.dart';
 import 'package:tactic_rush_chess_app/src/app.dart';
+import 'package:tactic_rush_chess_app/src/data/leaderboard_service.dart';
+import 'package:tactic_rush_chess_app/src/data/puzzle_repository.dart';
+import 'package:tactic_rush_chess_app/src/model/puzzle.dart';
 import 'package:tactic_rush_chess_app/src/model/rush_mode.dart';
 import 'package:tactic_rush_chess_app/src/rush/rush_state.dart';
+import 'package:tactic_rush_chess_app/src/ui/leaderboard_screen.dart';
 import 'package:tactic_rush_chess_app/src/ui/rush_screen.dart';
 import 'package:tactic_rush_chess_app/src/sound/sound_service.dart';
 import 'package:tactic_rush_chess_app/src/ui/widgets/rush_hud.dart';
 
+class _FakeLeaderboardService extends LeaderboardService {
+  _FakeLeaderboardService() : super.disabled();
+
+  @override
+  Future<List<LeaderboardEntry>> fetch(
+    RushMode mode,
+    LeaderboardPeriod period,
+  ) async => const [
+    LeaderboardEntry(rank: 1, displayName: 'Knight', score: 12, isMe: true),
+  ];
+}
+
 // Los tests usan el locale por defecto del entorno (inglés). Las cadenas
 // en español se verifican por separado en el l10n_test.dart.
+class _FakePuzzleRepository extends PuzzleRepository {
+  _FakePuzzleRepository()
+      : super(client: MockClient((_) async => http.Response('Not found', 404)));
+
+  @override
+  Future<List<Puzzle>> loadLocalPool() async => const [
+        Puzzle(
+          id: 'test1',
+          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+          moves: ['e2e4'],
+          rating: 500,
+        ),
+        Puzzle(
+          id: 'test2',
+          fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+          moves: ['e7e5'],
+          rating: 600,
+        ),
+      ];
+
+  @override
+  Future<List<Puzzle>> fetchRemote({int count = 8}) async => const [];
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() {
@@ -34,8 +76,11 @@ void main() {
 
   testWidgets('game screen renders the board', (tester) async {
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(
+      ProviderScope(
+        overrides: [
+          puzzleRepositoryProvider.overrideWithValue(_FakePuzzleRepository()),
+        ],
+        child: const MaterialApp(
           localizationsDelegates: [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
@@ -43,12 +88,15 @@ void main() {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: AppLocalizations.supportedLocales,
-          home: RushScreen(mode: RushMode.survival),
+          home: RushScreen(
+            mode: RushMode.survival,
+            skipCountdown: true,
+          ),
         ),
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(seconds: 1));
 
     expect(find.byType(cg.Board), findsOneWidget);
   });
@@ -106,13 +154,45 @@ void main() {
     expect(find.byIcon(Icons.close_rounded), findsNWidgets(3));
   });
 
+  testWidgets('online leaderboard shows periods and scores', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          leaderboardServiceProvider.overrideWithValue(
+            _FakeLeaderboardService(),
+          ),
+        ],
+        child: const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: LeaderboardScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Daily'), findsOneWidget);
+    expect(find.text('Weekly'), findsOneWidget);
+    expect(find.text('Monthly'), findsOneWidget);
+    expect(find.text('Knight'), findsOneWidget);
+    expect(find.text('12'), findsOneWidget);
+  });
+
   testWidgets('quitting a game returns to the home screen', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: TacticRushApp()));
-    await tester.pump();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          puzzleRepositoryProvider.overrideWithValue(_FakePuzzleRepository()),
+        ],
+        child: const TacticRushApp(debugSkipCountdown: true),
+      ),
+    );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Survival'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithIcon(IconButton, Icons.close_rounded));
+    await tester.pump(const Duration(seconds: 1));
+    debugDumpApp();
+    await tester.tap(find.byIcon(Icons.close_rounded));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Quit'));
     await tester.pumpAndSettle();

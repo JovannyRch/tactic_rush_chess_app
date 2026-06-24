@@ -3,7 +3,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../model/rush_mode.dart';
 
-enum RushStatus { idle, loading, playing, finished }
+enum RushStatus { idle, loading, countdown, playing, finished }
 
 /// Resultado de la última jugada del jugador, para feedback visual.
 enum MoveFeedback { none, correct, wrong }
@@ -31,6 +31,7 @@ class RushState {
     this.lastMove,
     this.puzzleId,
     this.isRecord = false,
+    this.countdownValue,
   });
 
   final RushMode mode;
@@ -54,6 +55,9 @@ class RushState {
   final List<PuzzleResult> history;
   final String? puzzleId;
   final bool isRecord;
+
+  /// Valor actual del contador de inicio (3, 2, 1, 0 = GO).
+  final int? countdownValue;
 
   int? get strikesAllowed => mode.maxStrikes;
 
@@ -92,6 +96,7 @@ class RushState {
     bool? isRecord,
     cg.Move? lastMove,
     bool clearLastMove = false,
+    int? countdownValue,
   }) {
     return RushState(
       mode: mode,
@@ -111,6 +116,7 @@ class RushState {
       puzzleId: puzzleId ?? this.puzzleId,
       isRecord: isRecord ?? this.isRecord,
       lastMove: clearLastMove ? null : (lastMove ?? this.lastMove),
+      countdownValue: countdownValue ?? this.countdownValue,
     );
   }
 

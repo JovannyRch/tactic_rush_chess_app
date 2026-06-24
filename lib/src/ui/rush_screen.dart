@@ -12,9 +12,16 @@ import 'rush_mode_l10n.dart';
 import 'widgets/rush_hud.dart';
 
 class RushScreen extends ConsumerStatefulWidget {
-  const RushScreen({super.key, required this.mode});
+  const RushScreen({
+    super.key,
+    required this.mode,
+    this.skipCountdown = false,
+  });
 
   final RushMode mode;
+
+  /// Solo para tests: salta la cuenta atrás 3-2-1-GO.
+  final bool skipCountdown;
 
   @override
   ConsumerState<RushScreen> createState() => _RushScreenState();
@@ -27,7 +34,9 @@ class _RushScreenState extends ConsumerState<RushScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(rushControllerProvider.notifier).start(widget.mode);
+      ref
+          .read(rushControllerProvider.notifier)
+          .start(widget.mode, skipCountdown: widget.skipCountdown);
     });
   }
 
@@ -82,6 +91,9 @@ class _RushScreenState extends ConsumerState<RushScreen> {
 
     final state = ref.watch(rushControllerProvider);
 
+    final isLoading = state.status == RushStatus.loading;
+    final isCountdown = state.status == RushStatus.countdown;
+
     return PopScope(
       canPop: _canPop,
       onPopInvokedWithResult: (didPop, _) async {
@@ -90,40 +102,55 @@ class _RushScreenState extends ConsumerState<RushScreen> {
       },
       child: Scaffold(
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded),
-                      onPressed: () async {
-                        if (await _confirmQuit() && mounted) _quit();
-                      },
+          child: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : isCountdown
+                  ? _CountdownOverlay(value: state.countdownValue ?? 0)
+                  : Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  IconButton(
+                                    key: const ValueKey('rush_close_button'),
+                                    icon: const Icon(Icons.close_rounded),
+                                    onPressed: () async {
+                                      if (await _confirmQuit() && mounted) {
+                                        _quit();
+                                      }
+                                    },
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    widget.mode.label(l10n),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium,
+                                  ),
+                                  const Spacer(),
+                                  const SizedBox(width: 48),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              RushHud(state: state),
+                              const SizedBox(height: 12),
+                              _ComboBanner(state: state),
+                              const SizedBox(height: 12),
+                              Expanded(
+                                child: Center(
+                                  child: _BoardArea(state: state),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              _TurnIndicator(state: state),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const Spacer(),
-                    Text(
-                      widget.mode.label(l10n),
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const Spacer(),
-                    const SizedBox(width: 48),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                RushHud(state: state),
-                const SizedBox(height: 12),
-                _ComboBanner(state: state),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: Center(child: _BoardArea(state: state)),
-                ),
-                const SizedBox(height: 12),
-                _TurnIndicator(state: state),
-              ],
-            ),
-          ),
         ),
       ),
     );
@@ -301,6 +328,47 @@ class _TurnIndicator extends StatelessWidget {
         fontWeight: FontWeight.w600,
       ),
       child: Text(text),
+    );
+  }
+}
+
+class _CountdownOverlay extends StatelessWidget {
+  const _CountdownOverlay({required this.value});
+
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = value == 0 ? 'GO!' : '$value';
+    final isGo = value == 0;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
+    return Container(
+      color: AppTheme.brandDark.withValues(alpha: 0.82),
+      alignment: Alignment.center,
+      child: AnimatedSwitcher(
+        duration: reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 350),
+        transitionBuilder: (child, animation) {
+          return ScaleTransition(
+            scale: Tween<double>(begin: 0.5, end: 1.0).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+            ),
+            child: FadeTransition(opacity: animation, child: child),
+          );
+        },
+        child: Text(
+          label,
+          key: ValueKey<int>(value),
+          style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                fontSize: isGo ? 110 : 160,
+                fontWeight: FontWeight.w900,
+                color: isGo ? AppTheme.brand : Colors.white,
+                letterSpacing: -2,
+              ),
+        ),
+      ),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:chessground/chessground.dart' as cg;
 import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,15 +20,25 @@ void main() {
     SoundService.instance.enabled = false; // sin canales de audio en tests
   });
 
+  PuzzleRepository _fakeRepo() => PuzzleRepository(
+        client: MockClient((_) async => http.Response('Not found', 404)),
+      );
+
   ProviderContainer makeContainer() {
-    final c = ProviderContainer();
+    final c = ProviderContainer(
+      overrides: [
+        puzzleRepositoryProvider.overrideWithValue(_fakeRepo()),
+      ],
+    );
     addTearDown(c.dispose);
     return c;
   }
 
   test('start carga el primer puzzle y queda jugable', () async {
     final c = makeContainer();
-    await c.read(rushControllerProvider.notifier).start(RushMode.survival);
+    await c
+        .read(rushControllerProvider.notifier)
+        .start(RushMode.survival, skipCountdown: true);
 
     final state = c.read(rushControllerProvider);
     expect(state.status, RushStatus.playing);
@@ -39,7 +50,7 @@ void main() {
   test('acepta la primera jugada correcta del puzzle', () async {
     final c = makeContainer();
     final notifier = c.read(rushControllerProvider.notifier);
-    await notifier.start(RushMode.survival);
+    await notifier.start(RushMode.survival, skipCountdown: true);
     final puzzle = notifier.debugCurrentPuzzle!;
 
     notifier.onUserMove(cg.Move.fromUci(puzzle.moves.first));
@@ -59,7 +70,7 @@ void main() {
   test('una jugada incorrecta cuenta como fallo (strike)', () async {
     final c = makeContainer();
     final notifier = c.read(rushControllerProvider.notifier);
-    await notifier.start(RushMode.survival);
+    await notifier.start(RushMode.survival, skipCountdown: true);
 
     // Una jugada legal pero que no es la solución (ni mate alternativo).
     final state0 = c.read(rushControllerProvider);
@@ -81,7 +92,7 @@ void main() {
     SharedPreferences.setMockInitialValues({RushMode.survival.storageKey: -1});
     final c = makeContainer();
     final notifier = c.read(rushControllerProvider.notifier);
-    await notifier.start(RushMode.survival);
+    await notifier.start(RushMode.survival, skipCountdown: true);
 
     await notifier.debugFinish();
 
@@ -94,7 +105,7 @@ void main() {
   test('quit descarta la sesión sin guardar resultado', () async {
     final c = makeContainer();
     final notifier = c.read(rushControllerProvider.notifier);
-    await notifier.start(RushMode.survival);
+    await notifier.start(RushMode.survival, skipCountdown: true);
 
     notifier.onUserMove(
       cg.Move.fromUci(notifier.debugCurrentPuzzle!.moves.first),

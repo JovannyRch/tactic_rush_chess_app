@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:chessground/chessground.dart' as cg;
 import 'package:dartchess/dartchess.dart' as dc;
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, visibleForTesting;
+import 'package:flutter/services.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -35,6 +36,7 @@ class RushController extends Notifier<RushState> {
   Timer? _gameTimer;
   Timer? _replyTimer;
   Timer? _advanceTimer;
+  Timer? _setupTimer;
   bool _toppingUp = false;
   bool _finishing = false;
 
@@ -57,7 +59,9 @@ class RushController extends Notifier<RushState> {
   // ---------------------------------------------------------------------------
 
   /// Inicia (o reinicia) una sesión en el [mode] indicado.
-  Future<void> start(RushMode mode) async {
+  ///
+  /// [skipCountdown] es útil en tests para evitar la cuenta atrás 3-2-1-GO.
+  Future<void> start(RushMode mode, {bool skipCountdown = false}) async {
     _mode = mode;
     _cancelTimers();
     _pool.clear();
@@ -69,15 +73,48 @@ class RushController extends Notifier<RushState> {
     final repo = ref.read(puzzleRepositoryProvider);
     final local = await repo.loadLocalPool();
     final recent = await ref.read(scoreStorageProvider).recentPuzzleIds();
-    _pool.addAll(repo.buildSessionPool(local, recent.toSet()));
+
+    // Priorizar BlitzTactics (batch remoto) sobre el pool local.
+    // Si no hay red, degradar silenciosamente al bundle offline.
+    final remote = await repo.fetchRemote(count: 8);
+    final basePool = remote.isNotEmpty ? remote : local;
+
+    _pool.addAll(repo.buildSessionPool(basePool, recent.toSet()));
     if (_pool.isEmpty) {
       state = state.copyWith(status: RushStatus.finished);
       return;
     }
 
-    _loadCurrent();
-    if (_mode.isTimed) _startGameTimer();
-    _maybeTopUp();
+    if (skipCountdown) {
+      _loadCurrent();
+      if (_mode.isTimed) _startGameTimer();
+      _maybeTopUp();
+    } else {
+      _startCountdown();
+    }
+  }
+
+  /// Muestra la cuenta atrás 3-2-1-GO antes de comenzar a jugar.
+  void _startCountdown() {
+    const step = Duration(milliseconds: 700);
+    var value = 3;
+
+    void tick() {
+      if (value >= 0) {
+        state = state.copyWith(
+          status: RushStatus.countdown,
+          countdownValue: value,
+        );
+        value--;
+        _setupTimer = Timer(step, tick);
+      } else {
+        _loadCurrent();
+        if (_mode.isTimed) _startGameTimer();
+        _maybeTopUp();
+      }
+    }
+
+    tick();
   }
 
   void quit() {
@@ -96,15 +133,30 @@ class RushController extends Notifier<RushState> {
   void _loadCurrent() {
     final puzzle = _pool[_poolIndex % _pool.length];
     _puzzle = puzzle;
+    if (kDebugMode) {
+      debugPrint(
+        '[Puzzle] source=${puzzle.source.name} | id=${puzzle.id} | rating=${puzzle.rating}',
+      );
+    }
     unawaited(ref.read(scoreStorageProvider).rememberPuzzle(puzzle.id));
-    final position = positionFromFen(puzzle.fen);
-    _position = position;
     _moveIndex = 0;
+
+    if (puzzle.setupFen != null && puzzle.setupMove != null) {
+      _playSetupAnimation(puzzle);
+    } else {
+      _renderPlayerPosition(puzzle.fen, puzzleId: puzzle.id);
+    }
+  }
+
+  /// Renderiza la posición donde le toca jugar al usuario.
+  void _renderPlayerPosition(String fen, {required String puzzleId}) {
+    final position = positionFromFen(fen);
+    _position = position;
 
     final playerSide = toCgSide(position.turn);
     state = state.copyWith(
       status: RushStatus.playing,
-      puzzleId: puzzle.id,
+      puzzleId: puzzleId,
       fen: position.fen,
       orientation: playerSide,
       sideToMove: playerSide,
@@ -114,6 +166,46 @@ class RushController extends Notifier<RushState> {
       feedback: MoveFeedback.none,
       clearLastMove: true,
     );
+  }
+
+  /// Muestra la jugada de preparación del rival antes de dejar jugar al usuario.
+  void _playSetupAnimation(Puzzle puzzle) {
+    final setupPosition = positionFromFen(puzzle.setupFen!);
+    _position = setupPosition;
+
+    // La orientación es siempre la del jugador (bando después del setup).
+    final playerSide = toCgSide(positionFromFen(puzzle.fen).turn);
+
+    state = state.copyWith(
+      status: RushStatus.playing,
+      puzzleId: puzzle.id,
+      fen: setupPosition.fen,
+      orientation: playerSide,
+      sideToMove: toCgSide(setupPosition.turn),
+      validMoves: const IMapConst({}),
+      interactable: false,
+      isCheck: setupPosition.isCheck,
+      feedback: MoveFeedback.none,
+      clearLastMove: true,
+    );
+
+    _setupTimer = Timer(const Duration(milliseconds: 500), () {
+      if (state.status != RushStatus.playing) return;
+      final move = dc.NormalMove.fromUci(puzzle.setupMove!);
+      final after = setupPosition.play(move);
+      _position = after;
+      SoundService.instance.move(
+        capture: setupPosition.board.pieceAt(move.to) != null,
+      );
+      state = state.copyWith(
+        fen: after.fen,
+        sideToMove: toCgSide(after.turn),
+        validMoves: legalMovesOf(after),
+        interactable: true,
+        isCheck: after.isCheck,
+        lastMove: toCgMove(puzzle.setupMove!),
+      );
+    });
   }
 
   void _advanceToNext() {
@@ -187,7 +279,6 @@ class RushController extends Notifier<RushState> {
   }
 
   void _onSolved() {
-    SoundService.instance.success();
     state = state.copyWith(
       solved: state.solved + 1,
       feedback: MoveFeedback.correct,
@@ -199,7 +290,7 @@ class RushController extends Notifier<RushState> {
   }
 
   void _onWrong() {
-    SoundService.instance.error();
+    HapticFeedback.vibrate();
     final strikes = state.strikes + 1;
     state = state.copyWith(
       strikes: strikes,
@@ -247,7 +338,7 @@ class RushController extends Notifier<RushState> {
         state = state.copyWith(secondsLeft: 0);
         _finish();
       } else {
-        if (left == 10) SoundService.instance.countdown();
+        if (left == 10) SoundService.instance.lowTime();
         state = state.copyWith(secondsLeft: left);
       }
     });
@@ -289,6 +380,7 @@ class RushController extends Notifier<RushState> {
     _gameTimer?.cancel();
     _replyTimer?.cancel();
     _advanceTimer?.cancel();
-    _gameTimer = _replyTimer = _advanceTimer = null;
+    _setupTimer?.cancel();
+    _gameTimer = _replyTimer = _advanceTimer = _setupTimer = null;
   }
 }

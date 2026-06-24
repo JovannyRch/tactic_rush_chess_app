@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -24,6 +25,10 @@ class PuzzleRepository {
 
   static const _assetPath = 'assets/puzzles/sample_puzzles.json';
   static const _nextEndpoint = 'https://lichess.org/api/puzzle/next';
+  static const _blitzEndpoints = [
+    'https://blitztactics.com/haste/puzzles',
+    'https://blitztactics.com/three/puzzles',
+  ];
 
   List<Puzzle>? _localCache;
 
@@ -70,9 +75,29 @@ class PuzzleRepository {
     return result;
   }
 
-  /// Intenta traer [count] puzzles nuevos desde lichess. Devuelve lista vacía
-  /// si no hay red o algo falla (nunca lanza). Usado para ampliar el pool.
+  /// Trae un batch de puzzles desde BlitzTactics. Si falla, recae en
+  /// lichess. Nunca lanza; devuelve lista vacía si no hay red.
   Future<List<Puzzle>> fetchRemote({int count = 8}) async {
+    // 1) Intentar un batch completo de BlitzTactics.
+    final shuffled = [..._blitzEndpoints]..shuffle(Random());
+    for (final endpoint in shuffled) {
+      try {
+        final res = await _client
+            .get(Uri.parse(endpoint))
+            .timeout(const Duration(seconds: 10));
+        if (res.statusCode != 200) continue;
+        final body = jsonDecode(res.body) as Map<String, dynamic>;
+        final puzzles = (body['puzzles'] as List)
+            .map((e) => _fromBlitzTacticsJson(e as Map<String, dynamic>))
+            .whereType<Puzzle>()
+            .toList();
+        if (puzzles.isNotEmpty) return puzzles;
+      } catch (_) {
+        continue;
+      }
+    }
+
+    // 2) Fallback a lichess, puzzle por puzzle.
     final result = <Puzzle>[];
     final seen = <String>{};
     for (var i = 0; i < count; i++) {
@@ -91,7 +116,7 @@ class PuzzleRepository {
           result.add(puzzle);
         }
       } catch (_) {
-        break; // sin red: degradar al pool local
+        break;
       }
     }
     return result;
@@ -137,9 +162,83 @@ class PuzzleRepository {
         moves: playerLine,
         rating: puzzle['rating'] as int,
         themes: (puzzle['themes'] as List?)?.cast<String>() ?? const [],
+        source: PuzzleSource.lichess,
       );
     } catch (_) {
       return null;
     }
+  }
+
+  @visibleForTesting
+  Puzzle? parseBlitzPuzzleForTest(Map<String, dynamic> json) =>
+      _fromBlitzTacticsJson(json);
+
+  /// Convierte un puzzle de BlitzTactics al modelo de la app.
+  ///
+  /// El JSON trae un árbol (`lines`) y una `initialMove`; el FEN ya refleja
+  /// la posición después de esa jugada inicial, así que solo hay que extraer
+  /// la primera línea forzada y validarla contra dartchess.
+  Puzzle? _fromBlitzTacticsJson(Map<String, dynamic> json) {
+    try {
+      final id = json['id'] as String;
+      final fen = json['fen'] as String;
+      final lines = json['lines'] as Map<String, dynamic>;
+      final rating = (json['rating'] as num).toInt();
+
+      if (lines.isEmpty) return null;
+      final moves = _extractBlitzLine(lines);
+      if (moves.isEmpty) return null;
+
+      final setup = dc.Setup.parseFen(fen);
+      dc.Position pos = dc.Chess.fromSetup(setup);
+
+      // Aplicar la jugada de preparación del rival.
+      final initialUci = (json['initialMove']?['uci'] as String?) ?? '';
+      if (initialUci.isNotEmpty) {
+        final initialMove = dc.NormalMove.fromUci(initialUci);
+        if (!pos.isLegal(initialMove)) return null;
+        pos = pos.play(initialMove);
+      }
+      final playerFen = pos.fen;
+
+      // Validar la línea de respuesta del jugador.
+      for (final uci in moves) {
+        final m = dc.NormalMove.fromUci(uci);
+        if (!pos.isLegal(m)) return null;
+        pos = pos.play(m);
+      }
+
+      return Puzzle(
+        id: 'blitz_$id',
+        fen: playerFen,
+        moves: moves,
+        rating: rating,
+        themes: const [],
+        source: PuzzleSource.blitztactics,
+        setupFen: fen,
+        setupMove: initialUci.isNotEmpty ? initialUci : null,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Extrae la primera línea forzada de un árbol de líneas de BlitzTactics.
+  /// Las hojas se marcan con el string `"win"`.
+  List<String> _extractBlitzLine(Map<String, dynamic> lines) {
+    final result = <String>[];
+    var current = lines;
+    while (current.isNotEmpty) {
+      final entry = current.entries.first;
+      result.add(entry.key);
+      final value = entry.value;
+      if (value is String) break;
+      if (value is Map<String, dynamic>) {
+        current = value;
+      } else {
+        break;
+      }
+    }
+    return result;
   }
 }

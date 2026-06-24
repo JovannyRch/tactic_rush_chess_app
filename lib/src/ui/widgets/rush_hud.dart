@@ -40,10 +40,20 @@ class RushHud extends StatelessWidget {
                 ),
               ],
             ),
-            if (state.mode.maxStrikes != null)
-              _Lives(strikes: state.strikes, allowed: state.mode.maxStrikes!)
-            else
-              _Clock(l10n: l10n, secondsLeft: state.secondsLeft),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (state.mode.maxStrikes != null)
+                  _Lives(
+                    strikes: state.strikes,
+                    allowed: state.mode.maxStrikes!,
+                  ),
+                if (state.mode.isTimed && state.mode.maxStrikes != null)
+                  const SizedBox(width: 20),
+                if (state.mode.isTimed)
+                  _Clock(l10n: l10n, secondsLeft: state.secondsLeft),
+              ],
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -149,7 +159,7 @@ class _Clock extends StatelessWidget {
     final theme = Theme.of(context);
     final m = secondsLeft ~/ 60;
     final s = secondsLeft % 60;
-    final low = secondsLeft <= 15;
+    final low = secondsLeft <= 10;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [

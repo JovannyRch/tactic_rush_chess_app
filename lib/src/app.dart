@@ -6,10 +6,17 @@ import 'theme/app_theme.dart';
 import 'ui/home_screen.dart';
 
 class TacticRushApp extends StatelessWidget {
-  const TacticRushApp({super.key, this.overrideLocale});
+  const TacticRushApp({
+    super.key,
+    this.overrideLocale,
+    this.debugSkipCountdown = false,
+  });
 
   /// Fuerza un locale concreto. Usado en tests para verificar cada traducción.
   final Locale? overrideLocale;
+
+  /// Solo para tests: salta la cuenta atrás 3-2-1-GO.
+  final bool debugSkipCountdown;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +32,7 @@ class TacticRushApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const HomeScreen(),
+      home: HomeScreen(debugSkipCountdown: debugSkipCountdown),
     );
   }
 }

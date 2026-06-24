@@ -41,11 +41,11 @@ class SoundService {
     }
   }
 
-  /// Click + vibración al mover una pieza.
+  /// Sonido de movimiento o captura de pieza.
   void move({bool capture = false}) {
     if (!enabled) return;
-    SystemSound.play(SystemSoundType.click);
     HapticFeedback.selectionClick();
+    _play(false, capture ? 'sounds/capture.mp3' : 'sounds/move.mp3');
   }
 
   /// Puzzle resuelto.
@@ -64,6 +64,9 @@ class SoundService {
 
   /// Aviso de cuenta atrás en los últimos segundos (modos por tiempo).
   void countdown() => _play(true, 'sounds/countdown.mp3', volume: 0.7);
+
+  /// Sonido de poco tiempo restante.
+  void lowTime() => _play(true, 'sounds/low_time.mp3', volume: 0.8);
 
   /// Sonido de la pantalla final según la puntuación obtenida.
   void result(int score) {

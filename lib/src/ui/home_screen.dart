@@ -10,7 +10,10 @@ import 'rush_screen.dart';
 import 'leaderboard_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.debugSkipCountdown = false});
+
+  /// Solo para tests: salta la cuenta atrás 3-2-1-GO al entrar en una partida.
+  final bool debugSkipCountdown;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -37,7 +40,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _play(RushMode mode) async {
     await Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => RushScreen(mode: mode)));
+    ).push(
+      MaterialPageRoute(
+        builder: (_) => RushScreen(
+          mode: mode,
+          skipCountdown: widget.debugSkipCountdown,
+        ),
+      ),
+    );
     _loadScores();
   }
 
@@ -55,40 +65,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 const _Logo(),
                 const SizedBox(height: 8),
-                Text(
-                  l10n.homeSubtitle,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.emoji_events_rounded),
-                  label: Text(l10n.leaderboardTitle),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const LeaderboardScreen(),
+                Row(
+                  children: [
+                    const SizedBox(width: 48),
+                    Expanded(
+                      child: Text(
+                        l10n.homeSubtitle,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
                     ),
-                  ),
+                    IconButton(
+                      tooltip: l10n.leaderboardTitle,
+                      icon: const Icon(Icons.emoji_events_rounded),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const LeaderboardScreen(),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
                 for (final mode in RushMode.values) ...[
                   _ModeCard(
                     mode: mode,
                     best: _best[mode] ?? 0,
                     onTap: () => _play(mode),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                 ],
-                const SizedBox(height: 16),
+                /* const SizedBox(height: 16),
                 Text(
                   l10n.homeAttribution,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.white38,
                   ),
-                ),
+                ), */
               ],
             ),
           ),
